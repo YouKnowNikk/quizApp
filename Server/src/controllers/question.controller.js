@@ -22,7 +22,10 @@ const addQuestion = asyncHandler(async (req, res) => {
 const getQuizQuestions = asyncHandler(async (req, res) => {
   try {
     
-    const questions = await Question.aggregate([{ $sample: { size: 10 } }]);
+    const questions = await Question.aggregate([
+      { $sample: { size: 5 } },
+      { $project: { correctOption: 0 } }
+    ]);
     
     if (!questions || questions.length === 0) {
       throw new ApiError(404, "No questions found");

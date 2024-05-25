@@ -2,29 +2,32 @@ import mongoose from "mongoose";
 
 const quizSchema = new mongoose.Schema({
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    questions: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Question',
-      required: true,
-    }],
-    userAnswers: [{
-      questionId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Question',
+        ref: 'User',
         required: true,
       },
-      selectedOption: {
+      questions: [{
+        questionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Question',
+          required: true,
+        },
+        selectedOption: {
+          type: Number,
+          default:null
+        },
+      }],
+      score: {
         type: Number,
-        required: true,
+        default: 0,
       },
-    }],
-    score: {
-      type: Number,
-      default: 0,
-    },
-  }, { timestamps: true });
+      totalScore: {
+        type: Number,
+        default: 0,
+      },
+      totalQuestions: {
+        type: Number,
+        default: 0,
+      },
+    }, { timestamps: true });
 export const Quiz = mongoose.model("Quiz", quizSchema)

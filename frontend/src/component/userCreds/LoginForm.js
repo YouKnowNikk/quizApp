@@ -11,9 +11,11 @@ const LoginForm = () => {
   
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('http://localhost:8000/users/login', data);
+      await axios.post('http://localhost:8000/users/login', data,{
+        withCredentials: true,
+      });
       toast.success("Logged in Successfully");
-      // Handle successful response
+     
       navigate("/");
     } catch (error) {
       if (error.response) {

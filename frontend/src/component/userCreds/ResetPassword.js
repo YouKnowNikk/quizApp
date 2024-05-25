@@ -11,7 +11,7 @@ const ResetPasswordForm = () => {
   const onSubmit = async (data) => {
     try {
       setLoading(true);
-      const response = await axios.post('http://localhost:8000/users/reset-password', data);
+        await axios.post('http://localhost:8000/users/reset-password', data);
       toast.success("Password reset link sent successfully", { autoClose: 2000 });
     } catch (error) {
       if (error.response) {

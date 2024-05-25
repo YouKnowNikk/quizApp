@@ -1,55 +1,86 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Quiz } from "../models/quizz.model.js";
 import { Question } from "../models/questions.model.js";
+import { Quiz } from "../models/quizz.model.js";
 
-const getQuizAttempts = asyncHandler(async (req, res) => {
-  const { userId, quizId, answers } = req.body;
-  
-  
-  const Quiz = await Quiz.create({ userId, quizId, answers });
+const submitQuiz = asyncHandler(async (req, res) => {
+  const { questions } = req.body;
+  const userId = req.user._id;
 
+  if (!questions || !Array.isArray(questions) || questions.length === 0) {
+    throw new ApiError(400, "Invalid input data");
+  }
+
+  const totalQuestions = questions.length;
+
+  // Calculate score based on attempted questions
   let score = 0;
- 
-  for (const answer of answers) {
-    const question = await Question.findById(answer.questionId);
-    if (!question) {
-      throw new ApiError(404, `Question with ID ${answer.questionId} not found`);
-    }
-    if (question.correctOption === answer.selectedOption) {
-      score += 10; 
+  let attemptedQuestions = 0;
+  for (const q of questions) {
+    if (q.selectedOption !== null) {
+      attemptedQuestions++;
+      const question = await Question.findById(q.questionId);
+      if (question && question.correctOption === q.selectedOption) {
+        score += 1; // Add 1 point for each correct answer
+      }
     }
   }
-  Quiz.score = score;
-  await Quiz.save();
 
-  res.status(201).json(new ApiResponse(201, Quiz, "Quiz attempt submitted successfully"));
-});
+  // Calculate total score as percentage of attempted questions
+  const totalScore = (score* 100 / totalQuestions) ;
 
-
-
-const getUserQuizAttempts  = asyncHandler(async (req, res) => {
-  const userId = req.params.userId;
-  const QuizAttempts = await Quiz.find({ userId }).populate('quizId', 'questions');
-  res.status(200).json(new ApiResponse(200, QuizAttempts, "User quiz attempts retrieved successfully"));
-});
-
-
-
-const getQuizAttemptDetails = asyncHandler(async (req, res) => {
-  const QuizId = req.params.QuizId;
-
-  const Quiz = await Quiz.findById(QuizId).populate('quizId', 'questions');
-
-  if (!Quiz) {
-    throw new ApiError(404, "Quiz attempt not found");
+  const quiz = await Quiz.create({ userId, questions, score, totalScore, totalQuestions });
+  if (!quiz) {
+    throw new ApiError(500, "Failed to save quiz results");
   }
 
-  res.status(200).json(new ApiResponse(200, Quiz, "Quiz attempt details retrieved successfully"));
+  res.status(201).json(new ApiResponse(201, quiz, "Quiz submitted successfully"));
 });
 
-export {getQuizAttempts,getQuizAttemptDetails,getUserQuizAttempts}
 
+const getUserQuizzes = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
+  const quizzes = await Quiz.find({ userId });
+  if (!quizzes || quizzes.length === 0) {
+    throw new ApiError(404, "No quizzes found for this user");
+  }
 
+  res.status(200).json(new ApiResponse(200, quizzes, "User quizzes retrieved successfully"));
+});
+
+const getQuizById = asyncHandler(async (req, res) => {
+  const quizId = req.params.id;
+
+  // Find the quiz by ID and populate the questions
+  const quiz = await Quiz.findById(quizId).populate({
+    path: 'questions.questionId',
+    model: 'Question',
+    select: 'question options correctOption'
+  });
+
+  if (!quiz) {
+    throw new ApiError(404, "Quiz not found");
+  }
+
+  // Transform the quiz data to include the correct option and user-selected option
+  const transformedQuiz = {
+    _id: quiz._id,
+    userId: quiz.userId,
+    score: quiz.score,
+    createdAt: quiz.createdAt,
+    updatedAt: quiz.updatedAt,
+    questions: quiz.questions.map(q => ({
+      questionId: q.questionId._id,
+      question: q.questionId.question,
+      options: q.questionId.options,
+      correctOption: q.questionId.correctOption,
+      selectedOption: q.selectedOption
+    }))
+  };
+
+  res.status(200).json(new ApiResponse(200, transformedQuiz, "Quiz retrieved successfully"));
+});
+
+export { submitQuiz,getUserQuizzes,getQuizById };

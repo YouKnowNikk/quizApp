@@ -102,11 +102,14 @@ const isStrongPassword = (password) => {
   
    
     const accessToken = await genrateAccessTokenAndRefreshToken(user._id);
-    const loggedInuser = await User.findById(user._id).select("-password -refreshToken");
+    const loggedInuser = await User.findById(user._id).select("-password ");
     const options = {
-        httpOnly: true,
-        secure: true
+      // httpOnly: true,
+      secure: false,  // Set to true if serving over HTTPS
+      sameSite: 'Lax',  // or 'None' if cross-site
+      path: '/',
     }
+   
     return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -120,4 +123,33 @@ const isStrongPassword = (password) => {
         )
     )
   });
- export {userRegistration , userLogin}
+
+
+  const getUser = asyncHandler(async (req, res) => {
+    try {
+      const user = req.user;
+  
+      if (!user) {
+        return res.status(404).json(new ApiResponse(404, null, "User not found"));
+      }
+  
+      const todayUTC = new Date();
+      todayUTC.setUTCHours(0, 0, 0, 0);
+  
+      const userBirthdateUTC = new Date(user.dateOfBirth);
+      userBirthdateUTC.setUTCHours(0, 0, 0, 0);
+  
+      let message = "";
+      if (todayUTC.getUTCMonth() === userBirthdateUTC.getUTCMonth() &&
+          todayUTC.getUTCDate() === userBirthdateUTC.getUTCDate()) {
+        message = "Happy Birthday!";
+      }
+  
+      const userResponse = { ...user._doc, message };
+  
+      return res.status(200).json(new ApiResponse(200, userResponse, "User fetched successfully"));
+    } catch (error) {
+      return res.status(500).json(new ApiResponse(500, null, "An error occurred while fetching the user"));
+    }
+  });
+ export {userRegistration , userLogin,getUser}

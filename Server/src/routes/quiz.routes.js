@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getQuizAttemptDetails,getQuizAttempts,getUserQuizAttempts } from "../controllers/quiz.controller.js";
+import { submitQuiz ,getUserQuizzes, getQuizById} from "../controllers/quiz.controller.js";
 import { verifyUser } from "../middlewares/auth.middleware.js";
 const router = Router();
 
-router.route('/quizattempts').post(verifyUser,getQuizAttempts)
-router.route('/getquizdetails').post(verifyUser,getQuizAttemptDetails)
-router.route('/userbsedquizdetails').post(verifyUser,getUserQuizAttempts)
+router.route("/submission").post(verifyUser,submitQuiz);
+router.route("/user-quizzes").get(verifyUser,getUserQuizzes)
+router.route("/quiz/:id").get(verifyUser,getQuizById)
 export default router 
