@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import Navbar from './Navbar'; // Assuming Navbar is a separate component
+import Navbar from './Navbar'; 
+
 
 const UserQuizzes = () => {
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [message, setMessage] = useState(null);
 
     useEffect(() => {
         const fetchUserQuizzes = async () => {
@@ -16,7 +17,23 @@ const UserQuizzes = () => {
                 });
                 setQuizzes(response.data.data);
             } catch (error) {
-                setError(error);
+                if (error.response) {
+                    const { status } = error.response;
+                    switch (status) {
+                    case 404:
+                        setMessage("You Never Attempt any quiz")
+                      break;
+                    case 400:
+                        setMessage("Invalid Credentials")
+                      break;
+                    default:
+                        setMessage("Login Error")
+                      break;
+                  }
+                } else {
+                    setMessage("Network Error")
+                }
+                
             } finally {
                 setLoading(false);
             }
@@ -28,9 +45,10 @@ const UserQuizzes = () => {
     if (loading) {
         return <div className="flex justify-center items-center h-screen">Loading...</div>;
     }
+ 
+    if (message) {
 
-    if (error) {
-        return <div className="text-red-500 text-center mt-4">Error fetching quizzes: {error.message}</div>;
+        return <div className="text-red-500 text-center mt-4">Error fetching quizzes: {message}</div>;
     }
 
     return (

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
 
 const QuizComponent = () => {
@@ -9,7 +8,9 @@ const QuizComponent = () => {
     const [selectedOptions, setSelectedOptions] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const navigate = useNavigate()
+    const [quizStarted, setQuizStarted] = useState(false);
+    const navigate = useNavigate();
+
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
@@ -26,6 +27,35 @@ const QuizComponent = () => {
 
         fetchQuestions();
     }, []);
+
+    const goFullScreen = () => {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) { // Firefox
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari and Opera
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+            document.documentElement.msRequestFullscreen();
+        }
+    };
+
+    const exitFullScreen = () => {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) { // Firefox
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { // IE/Edge
+            document.msExitFullscreen();
+        }
+    };
+
+    const handleStartQuiz = () => {
+        goFullScreen();
+        setQuizStarted(true);
+    };
 
     const handleOptionChange = (questionId, optionIndex) => {
         setSelectedOptions(prevOptions => ({
@@ -53,17 +83,68 @@ const QuizComponent = () => {
                 selectedOption: selectedOptions[question._id] !== undefined ? selectedOptions[question._id] : null,
             }))
         };
-       
+
         try {
-            const response = await axios.post('http://localhost:8000/quiz/submission', submissionData, {
+            await axios.post('http://localhost:8000/quiz/submission', submissionData, {
                 withCredentials: true
             });
-            console.log('Submission successful', response.data);
-            navigate('/finalSubmission')
+            exitFullScreen();
+            navigate('/finalSubmission');
         } catch (error) {
             console.error('Error submitting quiz', error);
         }
     };
+
+    const handleEndQuiz = () => {
+        exitFullScreen();
+        navigate('/finalSubmission');
+    };
+
+    useEffect(() => {
+        const handleFullScreenChange = () => {
+            if (!document.fullscreenElement && quizStarted) {
+                goFullScreen();
+            }
+        };
+
+        const disableCopyPaste = (e) => e.preventDefault();
+        const disableDevTools = (e) => {
+            if (
+                e.keyCode === 123 || // F12
+                (e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl+Shift+I
+                (e.ctrlKey && e.shiftKey && e.keyCode === 74) || // Ctrl+Shift+J
+                (e.ctrlKey && e.shiftKey && e.keyCode === 67) || // Ctrl+Shift+C
+                (e.ctrlKey && e.shiftKey && e.keyCode === 75) || // Ctrl+Shift+K
+                (e.ctrlKey && e.keyCode === 85) // Ctrl+U
+            ) {
+                e.preventDefault();
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden && quizStarted) {
+                alert("Please stay on this tab to continue the quiz.");
+            }
+        };
+
+        document.addEventListener('fullscreenchange', handleFullScreenChange);
+        document.addEventListener('copy', disableCopyPaste);
+        document.addEventListener('paste', disableCopyPaste);
+        document.addEventListener('cut', disableCopyPaste);
+        document.addEventListener('contextmenu', disableCopyPaste);
+        document.addEventListener('keydown', disableDevTools);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullScreenChange);
+            document.removeEventListener('copy', disableCopyPaste);
+            document.removeEventListener('paste', disableCopyPaste);
+            document.removeEventListener('cut', disableCopyPaste);
+            document.removeEventListener('contextmenu', disableCopyPaste);
+            document.removeEventListener('keydown', disableDevTools);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [quizStarted]);
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -76,9 +157,20 @@ const QuizComponent = () => {
     const currentQuestion = questions[currentQuestionIndex];
     const selectedOption = selectedOptions[currentQuestion._id];
 
+    if (!quizStarted) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+                <button
+                    onClick={handleStartQuiz}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                    Start Quiz
+                </button>
+            </div>
+        );
+    }
+
     return (
-       <>
-        {/* <Navbar/> */}
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
             <div className="max-w-2xl w-full p-6 bg-white shadow-lg rounded-lg mb-6">
                 <div>
@@ -122,7 +214,8 @@ const QuizComponent = () => {
                     ) : (
                         <button
                             onClick={handleSubmit}
-                            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                            className="px-4
+py-2 bg-green-500 text-white rounded hover:bg-green-600"
                         >
                             Submit
                         </button>
@@ -130,13 +223,12 @@ const QuizComponent = () => {
                 </div>
             </div>
             <button
-                onClick={handleSubmit}
+                onClick={handleEndQuiz}
                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             >
                 End Quiz
             </button>
         </div>
-       </>
     );
 };
 

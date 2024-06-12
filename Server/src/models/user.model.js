@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema({
   city: String,
   profilePicture: String,
   hobbies: [String],
+  otp: String, 
+  otpExpiration: Date, 
+  isOTPUsed:Boolean,
+  isRegistrationConfirmed:Boolean
 },{timestamps:true});
 userSchema.pre("save", async function (next) {
     if (!this.isModified('password')) {
@@ -31,9 +35,8 @@ userSchema.methods.genrateAccessToken = function() {
     return  jwt.sign({
           _id : this._id,
           email:this.email,
-          fullName:this.fullName,
-          username:this.username
-      },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1d'})
+          fullName:this.firstName,
+      },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'10d'})
   
   }
 

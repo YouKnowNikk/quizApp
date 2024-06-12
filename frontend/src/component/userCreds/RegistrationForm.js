@@ -3,10 +3,12 @@ import { useForm } from "react-hook-form";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
 import "tailwindcss/tailwind.css";
-import axios from "axios";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Link } from 'react-router-dom';  
+import { Link, useNavigate } from 'react-router-dom';  
+import { useDispatch } from "react-redux";
+import { userRegistration } from "../features/userSlice/UserSlice";
+
 
 const hobbiesOptions = [
   { label: "Reading", value: "reading" },
@@ -29,10 +31,13 @@ const RegistrationForm = () => {
   const [selectedState, setSelectedState] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
-
+  const [loading, setLoading] = useState(false);
+  const navigate =useNavigate()
+  const dispatch = useDispatch();
+   
   const onSubmit = async (data) => {
-    console.log(data);
-    console.log(profilePicture, "profile picture");
+    setLoading(true); 
+    
     const formData = new FormData();
 
     for (const key in data) {
@@ -40,37 +45,60 @@ const RegistrationForm = () => {
     }
 
     formData.append("profilePicture", profilePicture);
-
-    formData.append("country", selectedCountry?.value);
-    formData.append("state", selectedState?.value);
-    formData.append("city", selectedCity?.value);
-    try {
-      const response = await axios.post(
-        "http://localhost:8000/users/register",
-        formData
-      );
-      toast.success("User registered successfully", { autoClose: 2000 });
-      console.log("Registration successful:", response.data);
-
+    console.log(selectedCountry?.label);
+    formData.append("country", selectedCountry?.label);
+    formData.append("state", selectedState?.label);
+    formData.append("city", selectedCity?.label);
+    try{
+      console.log(formData);
+     let resp= await dispatch(userRegistration(formData));
+     if (resp.error) {
+      let errorsMessage = resp.payload.message;
+      toast.error(errorsMessage,{autoClose:2000})
+     
+      
+  } else {
+    const {email} = data
       reset();
-    } catch (error) {
-      if (error.response) {
-        const { status } = error.response;
-        switch (status) {
-            case 409:
-              toast.error("User already exists", { autoClose: 2000 });
-              break;
-            case 400:
-              toast.error("Invalid password", { autoClose: 2000 });
-              break;
-            default:
-              toast.error("Registration error", { autoClose: 2000 });
-              break;
-        }
-      } else {
-        toast.error("Network error", { autoClose: 2000 });
-      }
+      navigate(`/verifyOTP?email=${email}`)
+  }
     }
+    catch(error){
+      console.log("erred",error);
+      setLoading(false)
+    }
+    finally{
+      setLoading(false)
+    }
+    // try {
+    //   const response = await axios.post(
+    //     "http://localhost:8000/users/register",
+    //     formData
+    //   );
+    //   toast.success("User registered successfully", { autoClose: 2000 });
+    //   const {email} = data
+    //   reset();
+    //   navigate(`/verifyOTP?email=${email}`)
+    // } catch (error) {
+    //   if (error.response) {
+    //     const { status } = error.response;
+    //     switch (status) {
+    //         case 409:
+    //           toast.error("User already exists", { autoClose: 2000 });
+    //           break;
+    //         case 400:
+    //           toast.error("Invalid password", { autoClose: 2000 });
+    //           break;
+    //         default:
+    //           toast.error("Registration error", { autoClose: 2000 });
+    //           break;
+    //     }
+    //   } else {
+    //     toast.error("Network error", { autoClose: 2000 });
+    //   }
+    // }finally{
+    //   setLoading(false);
+    // }
   };
 
   const handleCountryChange = (selectedOption) => {
@@ -146,9 +174,16 @@ const RegistrationForm = () => {
   const validateConfirmPassword = (value) => {
     return value === watch("password") || "Passwords do not match";
   };
+  const Spinner = () => (
+    <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+                    <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
+                </div>
+  );
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+   <div>
+     {loading && <Spinner />} {/* Show spinner when loading */}
+     <div className={`flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 ${loading ? 'hidden' : ''}`}>
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
         <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
           Register an account
@@ -166,7 +201,7 @@ const RegistrationForm = () => {
               htmlFor="firstName"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              First Name
+              First Name <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -189,7 +224,7 @@ const RegistrationForm = () => {
               htmlFor="lastName"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Last Name
+              Last Name <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -210,7 +245,7 @@ const RegistrationForm = () => {
               htmlFor="email"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Email address
+              Email address <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -265,7 +300,7 @@ const RegistrationForm = () => {
               htmlFor="password"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Password
+              Password <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -288,8 +323,8 @@ const RegistrationForm = () => {
             <label
               htmlFor="confirmPassword"
               className="block text-sm font-medium leading-6 text-gray-900"
-            >
-              Confirm Password
+            > 
+              Confirm Password <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -315,7 +350,7 @@ const RegistrationForm = () => {
               htmlFor="dateOfBirth"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Date of Birth
+              Date of Birth <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -341,7 +376,7 @@ const RegistrationForm = () => {
               htmlFor="gender"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Gender
+              Gender <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <select
@@ -366,7 +401,7 @@ const RegistrationForm = () => {
               htmlFor="country"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Country
+              Country <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <Select
@@ -420,7 +455,7 @@ const RegistrationForm = () => {
               htmlFor="profilePicture"
               className="block text-sm font-medium leading-6 text-gray-900"
             >
-              Profile Picture
+              Profile Picture <span className="text-red-500">*</span>
             </label>
             <div className="mt-2">
               <input
@@ -499,6 +534,7 @@ const RegistrationForm = () => {
           Already a member? <Link to="/login" className="text-indigo-600 hover:text-indigo-500">Sign in</Link>
         </div>
     </div>
+   </div>
   );
 };
 

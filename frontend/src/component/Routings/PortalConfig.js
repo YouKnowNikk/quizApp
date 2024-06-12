@@ -10,6 +10,7 @@ import Quiz from '../Application/Quiz'
 import finalSubmission from '../Application/finalSubmission'
 import UserQuizzes from '../Application/UserQuizzes'
 import QuizDetails from '../Application/QuizDetails'
+import VerifyOTP from '../userCreds/VerifyOTP'
 
 function PortalConfig() {
   return (
@@ -18,6 +19,7 @@ function PortalConfig() {
          <Route path="/registration" element={<RegistrationForm />} />
     <Route path="/login" element={<LoginForm />} />
     <Route path="/reset-password" element={<ResetPasswordForm />} />
+    <Route path='/verifyOTP' element = {<VerifyOTP/>}/>
     {/* Protect the Home route using PrivateRoute */}
     <Route path='/' element={<PrivateRoute Component ={Home} />} />
     <Route path='/quiz' element ={<PrivateRoute Component={Quiz}/>}/>

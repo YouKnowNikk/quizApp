@@ -1,34 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useCallback, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import { useSelector,useDispatch } from "react-redux";
+import { getuser } from '../features/userSlice/UserSlice';
+import { useState } from 'react';
 
 
 function Home() {
-  const [user, setUser] = useState(null);
-
+   const dispatch = useDispatch();
   const navigate = useNavigate()
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/users/getuser', {
-        withCredentials: true // Include cookies in the request
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+  let user = useSelector(state=>state.userAuthReducer.user);
+  const [error,setError] = useState()
+
+  const fetchUser1 = useCallback(() =>{
+    try{
+       const resp = dispatch(getuser());
+       if(resp.error){
+        let errorsMessage = resp.payload.message;
+               setError(errorsMessage)
+       }
     }
-  };
+    catch(error){
+      console.log(error);
+      setError(error.message)
+    }
+  },[dispatch])
 
   useEffect(() => {
-    fetchUser();
-  }, []);
+    fetchUser1();
+  }, [fetchUser1]);
+
 
   if (!user) {
     return <div>Loading...</div>;
   }
 
-  
-console.log(user);
+  if(error){
+    return <div>{error}</div>
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100">
       {/* Navbar */}

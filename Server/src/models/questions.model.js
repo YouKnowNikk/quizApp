@@ -17,6 +17,15 @@ const questionSchema = new mongoose.Schema({
     min: 0,
     max: 3,
   },
+  questionType:{
+    type:String
+  },
+  questionLevel:{
+    type:Number,
+    min:1,
+    max:3,
+    default:1
+  }
 },{timestamps:true});
 
 
