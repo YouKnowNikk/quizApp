@@ -7,7 +7,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link, useNavigate } from 'react-router-dom';  
 import { useDispatch } from "react-redux";
-import { userRegistration } from "../features/userSlice/UserSlice";
+import { userRegistration } from "../features/userSlice/UserAction";
+
 
 
 const hobbiesOptions = [

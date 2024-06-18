@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import { useSelector,useDispatch } from "react-redux";
-import { getuser } from '../features/userSlice/UserSlice';
+import { getuser } from '../features/userSlice/UserAction';
 import { useState } from 'react';
 
 

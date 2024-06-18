@@ -4,7 +4,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link, useNavigate } from 'react-router-dom'; // Import Link component
 import { useDispatch } from 'react-redux';
-import { userLogin } from '../features/userSlice/UserSlice';
+import { userLogin } from '../features/userSlice/UserAction';
+
 
 const LoginForm = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
